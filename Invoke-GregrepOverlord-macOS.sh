@@ -21,7 +21,8 @@
 #   sudo bash Invoke-GregrepOverlord-macOS.sh -d 3 -u jsmith -p Terminal
 # =============================================================================
 
-set -euo pipefail
+# Soft error handling - dont exit on individual command failures
+set -uo pipefail
 IFS=$'\n\t'
 
 # ─── DEFAULTS ─────────────────────────────────────────────────────────────────
@@ -87,11 +88,11 @@ add_finding() {
     local now; now=$(date "+%Y-%m-%d %H:%M:%S")
     echo -e "${sev}\t${mod}\t${title}\t${detail}\t${indicator}\t${now}" >> "$FINDINGS_FILE"
     case "$sev" in
-        CRITICAL) ((CRIT_COUNT++)) ;;
-        HIGH)     ((HIGH_COUNT++)) ;;
-        MEDIUM)   ((MED_COUNT++)) ;;
-        LOW)      ((LOW_COUNT++)) ;;
-        INFO)     ((INFO_COUNT++)) ;;
+        CRITICAL) CRIT_COUNT=$((CRIT_COUNT+1)) ;;
+        HIGH)     HIGH_COUNT=$((HIGH_COUNT+1)) ;;
+        MEDIUM)   MED_COUNT=$((MED_COUNT+1)) ;;
+        LOW)      LOW_COUNT=$((LOW_COUNT+1)) ;;
+        INFO)     INFO_COUNT=$((INFO_COUNT+1)) ;;
     esac
 }
 
@@ -628,7 +629,7 @@ module_malware_artifacts() {
     done
 
     # Hidden files in user directories (dot-prefix executables)
-    find /Users -maxdepth 4 -name ".*" -type f -perm +111 \
+    find /Users -maxdepth 4 -name ".*" -type f -perm /111 \
         -not -path "*/.git/*" \
         2>/dev/null | head -100 | \
     while IFS= read -r f; do
@@ -886,22 +887,29 @@ HTMLEOF
 }
 
 # ─── ORCHESTRATOR ─────────────────────────────────────────────────────────────
-declare -A MODULE_FUNCS=(
-    ["UnifiedLogs"]="module_unified_logs"
-    ["BrowserArtifacts"]="module_browser_artifacts"
-    ["Persistence"]="module_persistence"
-    ["NetworkConnections"]="module_network"
-    ["ProcessTree"]="module_process_tree"
-    ["UserActivity"]="module_user_activity"
-    ["SecurityConfig"]="module_security_config"
-    ["MalwareArtifacts"]="module_malware_artifacts"
-    ["RemoteAccess"]="module_remote_access"
-    ["NetworkConfig"]="module_network_config"
-)
+# Module list - bash 3.2 compatible (no associative arrays)
+ALL_MODULES="UnifiedLogs BrowserArtifacts Persistence NetworkConnections ProcessTree UserActivity SecurityConfig MalwareArtifacts RemoteAccess NetworkConfig"
 
-for mod in "${!MODULE_FUNCS[@]}"; do
+run_module() {
+    local mod="$1"
+    case "$mod" in
+        UnifiedLogs)       module_unified_logs ;;
+        BrowserArtifacts)  module_browser_artifacts ;;
+        Persistence)       module_persistence ;;
+        NetworkConnections) module_network ;;
+        ProcessTree)       module_process_tree ;;
+        UserActivity)      module_user_activity ;;
+        SecurityConfig)    module_security_config ;;
+        MalwareArtifacts)  module_malware_artifacts ;;
+        RemoteAccess)      module_remote_access ;;
+        NetworkConfig)     module_network_config ;;
+        *) echo "  [WARN] Unknown module: $mod" ;;
+    esac
+}
+
+for mod in $ALL_MODULES; do
     if should_run "$mod"; then
-        ${MODULE_FUNCS[$mod]} || echo "  [WARN] Module $mod encountered errors"
+        run_module "$mod" || echo "  [WARN] Module $mod encountered errors"
     fi
 done
 
