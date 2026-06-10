@@ -581,8 +581,8 @@ function Invoke-ScheduledTasks {
                 Execute     = $Execute
                 Arguments   = $Args
                 Description = $Task.Description
-                LastRun     = try { $Task.LastRunTime } catch { "" }
-                NextRun     = try { $Task.NextRunTime } catch { "" }
+                LastRun     = if ($Task.PSObject.Properties["LastRunTime"]) { $Task.LastRunTime } else { "" }
+                NextRun     = if ($Task.PSObject.Properties["NextRunTime"]) { $Task.NextRunTime } else { "" }
                 TriggerType = ($Task.Triggers | Select-Object -ExpandProperty CimClass -ErrorAction SilentlyContinue) -join ";"
                 FullCommand = "$Execute $Args"
             }
