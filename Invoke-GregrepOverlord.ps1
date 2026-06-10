@@ -118,9 +118,9 @@ New-Item -ItemType Directory -Force -Path $CSVPath   | Out-Null
 $AllModules = @(
     "EventLogs","BrowserArtifacts","ScheduledTasks","Prefetch","CertUtil",
     "Persistence","NetworkConnections","ProcessTree","UserActivity",
-    "ShadowCopies","WMISubscriptions","PowerShellHistory","RecentFiles",
-    "LateralMovement","DefenderLogs","RegistryRun","FileSystemAnomalies",
-    "CredentialAccess","ServicesDrivers","AmCache","ShimCache","BAM"
+    "ShadowCopies","WMISubscriptions","PowerShellHistory",
+    "LateralMovement","DefenderLogs","FileSystemAnomalies",
+    "CredentialAccess","ServicesDrivers","AmCache","BAM"
 )
 
 $RunModules = if ($Modules -eq "ALL") { $AllModules } else { $Modules -split "," | ForEach-Object { $_.Trim() } }
@@ -236,7 +236,7 @@ function Invoke-EventLogs {
         }
         foreach ($e in $Evts) {
             $xml  = [xml]$e.ToXml()
-            $data = $xml.Event.EventData.Data
+            $data = if ($xml.Event.EventData) { $xml.Event.EventData.Data } else { @() }
             $row  = [PSCustomObject]@{
                 TimeCreated  = $e.TimeCreated
                 EventId      = $e.Id
@@ -320,7 +320,7 @@ function Invoke-EventLogs {
             }
             foreach ($e in $SysEvts) {
                 $xml  = [xml]$e.ToXml()
-                $data = $xml.Event.EventData.Data
+                $data = if ($xml.Event.EventData) { $xml.Event.EventData.Data } else { @() }
                 $row  = [PSCustomObject]@{
                     TimeCreated  = $e.TimeCreated
                     EventId      = "Sysmon-$SysId"
@@ -449,14 +449,14 @@ function Invoke-BrowserArtifacts {
             if ($HistPath -and (Test-Path $HistPath)) {
                 try {
                     $TempDb = "$env:TEMP\GO_${Browser}_History_$($Profile.Name).db"
-                    Copy-Item $HistPath $TempDb -Force
+                    Copy-Item $HistPath $TempDb -Force -ErrorAction SilentlyContinue
 
                     # Use .NET SQLite if available, else parse raw strings
                     $RawContent = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::Latin1)
                     $UrlPattern = 'https?://[^\x00-\x1f\x7f"'' ]{10,500}'
-                    $Matches    = [regex]::Matches($RawContent, $UrlPattern)
+                    $RegexMatches = [regex]::Matches($RawContent, $UrlPattern)
                     $Seen       = [System.Collections.Generic.HashSet[string]]::new()
-                    foreach ($m in $Matches) {
+                    foreach ($m in $RegexMatches) {
                         $url = $m.Value.TrimEnd('.')
                         if ($Seen.Add($url)) {
                             $row = [PSCustomObject]@{
@@ -482,7 +482,7 @@ function Invoke-BrowserArtifacts {
                     }
                     Remove-Item $TempDb -Force -ErrorAction SilentlyContinue
                 } catch {
-                    Write-Warning "  [BrowserArtifacts] Could not parse $Browser history for $($Profile.Name): $_"
+                    Write-Warning "  [BrowserArtifacts] Could not parse $Browser history for $($Profile.Name): $($_.Exception.Message)"
                 }
             }
 
@@ -494,11 +494,11 @@ function Invoke-BrowserArtifacts {
                     if (Test-Path $PlacesDb) {
                         try {
                             $TempDb  = "$env:TEMP\GO_FF_Places_$($Profile.Name).db"
-                            Copy-Item $PlacesDb $TempDb -Force
+                            Copy-Item $PlacesDb $TempDb -Force -ErrorAction SilentlyContinue
                             $Raw     = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::Latin1)
                             $Matches = [regex]::Matches($Raw, 'https?://[^\x00-\x1f\x7f"'' ]{10,500}')
                             $Seen    = [System.Collections.Generic.HashSet[string]]::new()
-                            foreach ($m in $Matches) {
+                            foreach ($m in $RegexMatches) {
                                 $url = $m.Value.TrimEnd('.')
                                 if ($Seen.Add($url)) {
                                     $results.Add([PSCustomObject]@{
@@ -581,8 +581,8 @@ function Invoke-ScheduledTasks {
                 Execute     = $Execute
                 Arguments   = $Args
                 Description = $Task.Description
-                LastRun     = $Task.LastRunTime
-                NextRun     = $Task.NextRunTime
+                LastRun     = try { $Task.LastRunTime } catch { "" }
+                NextRun     = try { $Task.NextRunTime } catch { "" }
                 TriggerType = ($Task.Triggers | Select-Object -ExpandProperty CimClass -ErrorAction SilentlyContinue) -join ";"
                 FullCommand = "$Execute $Args"
             }
@@ -597,7 +597,7 @@ function Invoke-ScheduledTasks {
             )
             $flagged = $false
             foreach ($pat in $suspPatterns) {
-                if ($row.FullCommand -match $pat -or $row.TaskName -match $pat) {
+                if (($row.PSObject.Properties["FullCommand"] -and $row.FullCommand -match $pat) -or ($row.PSObject.Properties["TaskName"] -and $row.TaskName -match $pat)) {
                     if (-not $flagged) {
                         Add-Finding -Severity "HIGH" -Module "ScheduledTasks" `
                             -Title "Suspicious Scheduled Task: $($Task.TaskName)" `
@@ -1466,7 +1466,7 @@ function Invoke-CredentialAccess {
         # DPAPI Master Keys -- large number can indicate dump attempt
         $DPAPIPath = "$($Profile.FullName)\AppData\Roaming\Microsoft\Protect"
         if (Test-Path $DPAPIPath) {
-            $KeyCount = (Get-ChildItem $DPAPIPath -Recurse -ErrorAction SilentlyContinue -File).Count
+            $KeyCount = (@(Get-ChildItem $DPAPIPath -Recurse -ErrorAction SilentlyContinue -File)).Count
             $results.Add([PSCustomObject]@{
                 User     = $Profile.Name
                 Type     = "DPAPI-MasterKeys"
@@ -1644,11 +1644,11 @@ function New-HTMLReport {
     $Duration    = [math]::Round(($EndTime - $StartTime).TotalSeconds, 1)
     $FindingsByS = $Global:OverlordFindings | Group-Object Severity
 
-    $CritCount   = ($Global:OverlordFindings | Where-Object { $_.Severity -eq "CRITICAL" }).Count
-    $HighCount   = ($Global:OverlordFindings | Where-Object { $_.Severity -eq "HIGH" }).Count
-    $MedCount    = ($Global:OverlordFindings | Where-Object { $_.Severity -eq "MEDIUM" }).Count
-    $LowCount    = ($Global:OverlordFindings | Where-Object { $_.Severity -eq "LOW" }).Count
-    $InfoCount   = ($Global:OverlordFindings | Where-Object { $_.Severity -eq "INFO" }).Count
+    $CritCount   = (@($Global:OverlordFindings | Where-Object { $_.Severity -eq "CRITICAL" })).Count
+    $HighCount   = (@($Global:OverlordFindings | Where-Object { $_.Severity -eq "HIGH" })).Count
+    $MedCount    = (@($Global:OverlordFindings | Where-Object { $_.Severity -eq "MEDIUM" })).Count
+    $LowCount    = (@($Global:OverlordFindings | Where-Object { $_.Severity -eq "LOW" })).Count
+    $InfoCount   = (@($Global:OverlordFindings | Where-Object { $_.Severity -eq "INFO" })).Count
 
     $RiskLevel   = if ($CritCount -gt 0) { "CRITICAL" }
                    elseif ($HighCount -gt 0) { "HIGH" }
@@ -1686,8 +1686,8 @@ function New-HTMLReport {
         $mod   = $_
         $count = if ($Global:OverlordResults[$mod]) { $Global:OverlordResults[$mod].Count } else { 0 }
         $modFindings = $Global:OverlordFindings | Where-Object { $_.Module -like "*$mod*" }
-        $modCrit = ($modFindings | Where-Object { $_.Severity -eq "CRITICAL" }).Count
-        $modHigh = ($modFindings | Where-Object { $_.Severity -eq "HIGH" }).Count
+        $modCrit = (@($modFindings | Where-Object { $_.Severity -eq "CRITICAL" })).Count
+        $modHigh = (@($modFindings | Where-Object { $_.Severity -eq "HIGH" })).Count
         $cardClass = if ($modCrit -gt 0) { "card-critical" } elseif ($modHigh -gt 0) { "card-high" } else { "card-ok" }
         "<div class='module-card $cardClass'>
             <div class='card-title'>$mod</div>
@@ -1941,7 +1941,7 @@ foreach ($mod in $RunModules) {
 
 # Generate reports
 Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] > Generating Reports..." -ForegroundColor Yellow
-$HTMLReportPath = Join-Path $OutputPath "GregrepOverlord-Report_$Hostname_$($StartTime.ToString('yyyyMMdd-HHmmss')).html"
+$HTMLReportPath = Join-Path $OutputPath "GregrepOverlord-Report_${Hostname}_$($StartTime.ToString('yyyyMMdd-HHmmss')).html"
 New-HTMLReport -ReportPath $HTMLReportPath
 
 # Save findings CSV
@@ -1966,9 +1966,9 @@ Write-Host "  GREGREP-OVERLORD COMPLETE" -ForegroundColor Cyan
 Write-Host ("-" * 70) -ForegroundColor DarkGray
 Write-Host "  Duration    : ${Duration}s"
 Write-Host "  Findings    : $($Global:OverlordFindings.Count) total"
-Write-Host "  CRITICAL    : $(($Global:OverlordFindings | Where-Object {$_.Severity -eq 'CRITICAL'}).Count)" -ForegroundColor Red
-Write-Host "  HIGH        : $(($Global:OverlordFindings | Where-Object {$_.Severity -eq 'HIGH'}).Count)" -ForegroundColor DarkYellow
-Write-Host "  MEDIUM      : $(($Global:OverlordFindings | Where-Object {$_.Severity -eq 'MEDIUM'}).Count)" -ForegroundColor Yellow
+Write-Host "  CRITICAL    : $((@($Global:OverlordFindings | Where-Object {$_.Severity -eq 'CRITICAL'})).Count)" -ForegroundColor Red
+Write-Host "  HIGH        : $((@($Global:OverlordFindings | Where-Object {$_.Severity -eq 'HIGH'})).Count)" -ForegroundColor DarkYellow
+Write-Host "  MEDIUM      : $((@($Global:OverlordFindings | Where-Object {$_.Severity -eq 'MEDIUM'})).Count)" -ForegroundColor Yellow
 Write-Host "  HTML Report : $HTMLReportPath" -ForegroundColor Green
 Write-Host "  CSV Files   : $CSVPath" -ForegroundColor Green
 Write-Host ("-" * 70) -ForegroundColor DarkGray
