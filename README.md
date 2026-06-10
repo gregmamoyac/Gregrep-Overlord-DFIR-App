@@ -8,10 +8,6 @@ no agent), cross-platform coverage (Windows + macOS natively), IOC-aware reporti
 (findings scored by severity), and alert-scenario presets (pre-mapped to EDR alert 
 types) — in a single script with zero dependencies.
 
-Inspired by the forensic coverage philosophy of [Eric Zimmerman's Tools](https://ericzimmerman.github.io/) 
-and the collection architecture of [KAPE](https://www.kroll.com/en/services/cyber-risk/incident-response-litigation-support/kroll-artifact-parser-extractor-kape). 
-Event log hunting concepts were informed by [DeepBlueCLI](https://github.com/sans-holiday/DeepBlueCLI) 
-by Eric Conrad and the SANS community. No code from any of these projects was used.
 ---
 
 ## What It Is
@@ -261,3 +257,12 @@ MIT License — free to use, fork, and modify. Contributions welcome.
 ---
 
 *Built for incident responders who need answers fast, not another tool to install.*
+
+---
+
+## Acknowledgement
+
+Inspired by the forensic coverage philosophy of [Eric Zimmerman's Tools](https://ericzimmerman.github.io/) 
+and the collection architecture of [KAPE](https://www.kroll.com/en/services/cyber-risk/incident-response-litigation-support/kroll-artifact-parser-extractor-kape). 
+Event log hunting concepts were informed by [DeepBlueCLI](https://github.com/sans-holiday/DeepBlueCLI) 
+by Eric Conrad and the SANS community. No code from any of these projects was used.
