@@ -140,11 +140,17 @@ function Write-ModuleHeader {
 }
 
 function Save-ModuleCSV {
-    param([string]$ModuleName, [array]$Data)
-    if ($Data -and $Data.Count -gt 0) {
+    param([string]$ModuleName, $Data)
+    if ($null -eq $Data) { return }
+    $DataArray = @($Data)
+    if ($DataArray.Count -gt 0) {
         $CsvFile = Join-Path $CSVPath "$ModuleName.csv"
-        $Data | Export-Csv -Path $CsvFile -NoTypeInformation -Encoding UTF8 -Force
-        Write-Host "    [CSV] $($Data.Count) records -> $CsvFile" -ForegroundColor DarkGreen
+        try {
+            $DataArray | Export-Csv -Path $CsvFile -NoTypeInformation -Encoding UTF8 -Force
+            Write-Host "    [CSV] $($DataArray.Count) records -> $CsvFile" -ForegroundColor DarkGreen
+        } catch {
+            Write-Warning "  [CSV] Could not write $ModuleName CSV: $($_.Exception.Message)"
+        }
     }
 }
 
@@ -452,7 +458,7 @@ function Invoke-BrowserArtifacts {
                     Copy-Item $HistPath $TempDb -Force -ErrorAction SilentlyContinue
 
                     # Use .NET SQLite if available, else parse raw strings
-                    $RawContent = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::Latin1)
+                    $RawContent = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::GetEncoding(1252))
                     $UrlPattern = 'https?://[^\x00-\x1f\x7f"'' ]{10,500}'
                     $RegexMatches = [regex]::Matches($RawContent, $UrlPattern)
                     $Seen       = [System.Collections.Generic.HashSet[string]]::new()
@@ -495,7 +501,7 @@ function Invoke-BrowserArtifacts {
                         try {
                             $TempDb  = "$env:TEMP\GO_FF_Places_$($Profile.Name).db"
                             Copy-Item $PlacesDb $TempDb -Force -ErrorAction SilentlyContinue
-                            $Raw     = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::Latin1)
+                            $Raw     = [System.IO.File]::ReadAllText($TempDb, [System.Text.Encoding]::GetEncoding(1252))
                             $Matches = [regex]::Matches($Raw, 'https?://[^\x00-\x1f\x7f"'' ]{10,500}')
                             $Seen    = [System.Collections.Generic.HashSet[string]]::new()
                             foreach ($m in $RegexMatches) {
@@ -570,8 +576,8 @@ function Invoke-ScheduledTasks {
     foreach ($Task in $Tasks) {
         $Actions = $Task.Actions
         foreach ($Action in $Actions) {
-            $Execute = $Action.Execute
-            $Args    = $Action.Arguments
+            $Execute = if ($Action.PSObject.Properties["Execute"])   { $Action.Execute }   else { "" }
+            $Args    = if ($Action.PSObject.Properties["Arguments"]) { $Action.Arguments } else { "" }
             $row = [PSCustomObject]@{
                 TaskName    = $Task.TaskName
                 TaskPath    = $Task.TaskPath
