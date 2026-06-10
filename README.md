@@ -3,6 +3,9 @@
 **Forensic Triage Orchestrator** — Windows & macOS  
 *A live-system incident response tool that goes beyond what your SIEM dashboard shows you.*
 
+Gregrep-Overlord is the only tool that combines live-system triage (no file copying, no agent), cross-platform coverage (Windows + macOS natively), IOC-aware reporting (findings scored by severity), and alert-scenario presets (pre-mapped to EDR alert types) — in a single script with zero dependencies.
+
+It was inspired by the forensic coverage philosophy of Eric Zimmerman's Tools and the collection architecture of KAPE. Event log hunting concepts were informed by DeepBlueCLI by Eric Conrad and the SANS community. No code from any of these projects was used.
 ---
 
 ## What It Is
