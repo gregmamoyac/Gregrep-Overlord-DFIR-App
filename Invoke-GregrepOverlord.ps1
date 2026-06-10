@@ -68,7 +68,7 @@ param(
     [string]$SkipModules = ""
 )
 
-Set-StrictMode -Version Latest
+Set-StrictMode -Version 2
 $ErrorActionPreference = "Continue"
 
 # --- BANNER -------------------------------------------------------------------
@@ -169,6 +169,17 @@ function Safe-Query {
     }
 }
 
+function Get-XmlField {
+    param([object]$Data, [string[]]$Names)
+    try {
+        $node = $Data | Where-Object { $_.Name -in $Names } | Select-Object -First 1
+        if ($node -eq $null) { return "" }
+        $val = $node.'#text'
+        if ($val -eq $null) { return [string]$node.InnerText }
+        return [string]$val
+    } catch { return "" }
+}
+
 # --- MODULES ------------------------------------------------------------------
 
 # MODULE 1: EVENT LOGS -- IOC-focused event collection
@@ -230,14 +241,14 @@ function Invoke-EventLogs {
                 TimeCreated  = $e.TimeCreated
                 EventId      = $e.Id
                 Description  = $SecurityEvents[$EvtId]
-                SubjectUser  = ($data | Where-Object { $_.Name -eq 'SubjectUserName' }).'#text'
-                TargetUser   = ($data | Where-Object { $_.Name -eq 'TargetUserName' }).'#text'
-                ProcessName  = ($data | Where-Object { $_.Name -in @('NewProcessName','ProcessName') }).'#text'
-                CommandLine  = ($data | Where-Object { $_.Name -eq 'CommandLine' }).'#text'
-                LogonType    = ($data | Where-Object { $_.Name -eq 'LogonType' }).'#text'
-                IpAddress    = ($data | Where-Object { $_.Name -eq 'IpAddress' }).'#text'
-                WorkStation  = ($data | Where-Object { $_.Name -eq 'WorkstationName' }).'#text'
-                TaskName     = ($data | Where-Object { $_.Name -eq 'TaskName' }).'#text'
+                SubjectUser  = (Get-XmlField $data @('SubjectUserName'))
+                TargetUser   = (Get-XmlField $data @('TargetUserName'))
+                ProcessName  = (Get-XmlField $data @('NewProcessName','ProcessName'))
+                CommandLine  = (Get-XmlField $data @('CommandLine'))
+                LogonType    = (Get-XmlField $data @('LogonType'))
+                IpAddress    = (Get-XmlField $data @('IpAddress'))
+                WorkStation  = (Get-XmlField $data @('WorkstationName'))
+                TaskName     = (Get-XmlField $data @('TaskName'))
                 Message      = $e.Message -replace "`n"," " -replace "`r"," "
             }
             # IOC flagging
@@ -314,15 +325,15 @@ function Invoke-EventLogs {
                     TimeCreated  = $e.TimeCreated
                     EventId      = "Sysmon-$SysId"
                     Description  = $SysmonEvents[$SysId]
-                    SubjectUser  = ($data | Where-Object { $_.Name -eq 'User' }).'#text'
-                    ProcessName  = ($data | Where-Object { $_.Name -eq 'Image' }).'#text'
-                    CommandLine  = ($data | Where-Object { $_.Name -eq 'CommandLine' }).'#text'
-                    TargetImage  = ($data | Where-Object { $_.Name -in @('TargetImage','ImageLoaded') }).'#text'
-                    Hashes       = ($data | Where-Object { $_.Name -eq 'Hashes' }).'#text'
-                    DestIP       = ($data | Where-Object { $_.Name -eq 'DestinationIp' }).'#text'
-                    DestPort     = ($data | Where-Object { $_.Name -eq 'DestinationPort' }).'#text'
-                    QueryName    = ($data | Where-Object { $_.Name -eq 'QueryName' }).'#text'
-                    TargetFile   = ($data | Where-Object { $_.Name -eq 'TargetFilename' }).'#text'
+                    SubjectUser  = (Get-XmlField $data @('User'))
+                    ProcessName  = (Get-XmlField $data @('Image'))
+                    CommandLine  = (Get-XmlField $data @('CommandLine'))
+                    TargetImage  = (Get-XmlField $data @('TargetImage','ImageLoaded'))
+                    Hashes       = (Get-XmlField $data @('Hashes'))
+                    DestIP       = (Get-XmlField $data @('DestinationIp'))
+                    DestPort     = (Get-XmlField $data @('DestinationPort'))
+                    QueryName    = (Get-XmlField $data @('QueryName'))
+                    TargetFile   = (Get-XmlField $data @('TargetFilename'))
                     Message      = $e.Message -replace "`n"," " -replace "`r"," "
                 }
                 # Sysmon IOC flags
