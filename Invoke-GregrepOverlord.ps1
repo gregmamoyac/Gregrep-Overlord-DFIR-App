@@ -10,7 +10,7 @@
     analyst review.
 
     Inspired by EZ Tools (Eric Zimmerman) and KAPE collection logic, but implemented
-    entirely in native PowerShell — no binary dependencies required.
+    entirely in native PowerShell -- no binary dependencies required.
 
 .PARAMETER OutputPath
     Directory to write reports and CSVs. Defaults to .\GregrepOverlord-Output\<hostname>-<datetime>
@@ -71,28 +71,28 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Continue"
 
-# ─── BANNER ───────────────────────────────────────────────────────────────────
+# --- BANNER -------------------------------------------------------------------
 $Banner = @"
 
-  ██████╗ ██████╗ ███████╗ ██████╗ ██████╗ ███████╗██████╗ 
- ██╔════╝ ██╔══██╗██╔════╝██╔════╝ ██╔══██╗██╔════╝██╔══██╗
- ██║  ███╗██████╔╝█████╗  ██║  ███╗██████╔╝█████╗  ██████╔╝
- ██║   ██║██╔══██╗██╔══╝  ██║   ██║██╔══██╗██╔══╝  ██╔═══╝ 
- ╚██████╔╝██║  ██║███████╗╚██████╔╝██║  ██║███████╗██║     
-  ╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝     
-          ██████╗ ██╗   ██╗███████╗██████╗ ██╗      ██████╗ ██████╗ ██████╗ 
-         ██╔═══██╗██║   ██║██╔════╝██╔══██╗██║     ██╔═══██╗██╔══██╗██╔══██╗
-         ██║   ██║██║   ██║█████╗  ██████╔╝██║     ██║   ██║██████╔╝██║  ██║
-         ██║   ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗██║     ██║   ██║██╔══██╗██║  ██║
-         ╚██████╔╝ ╚████╔╝ ███████╗██║  ██║███████╗╚██████╔╝██║  ██║██████╔╝
-          ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ 
+  ||||||+ ||||||+ |||||||+ ||||||+ ||||||+ |||||||+||||||+ 
+ ||+====+ ||+==||+||+====+||+====+ ||+==||+||+====+||+==||+
+ |||  |||+||||||++|||||+  |||  |||+||||||++|||||+  ||||||++
+ |||   |||||+==||+||+==+  |||   |||||+==||+||+==+  ||+===+ 
+ +||||||++|||  ||||||||||++||||||++|||  ||||||||||+|||     
+  +=====+ +=+  +=++======+ +=====+ +=+  +=++======++=+     
+          ||||||+ ||+   ||+|||||||+||||||+ ||+      ||||||+ ||||||+ ||||||+ 
+         ||+===||+|||   |||||+====+||+==||+|||     ||+===||+||+==||+||+==||+
+         |||   ||||||   ||||||||+  ||||||++|||     |||   |||||||||++|||  |||
+         |||   |||+||+ ||++||+==+  ||+==||+|||     |||   |||||+==||+|||  |||
+         +||||||++ +||||++ |||||||+|||  ||||||||||++||||||++|||  |||||||||++
+          +=====+   +===+  +======++=+  +=++======+ +=====+ +=+  +=++=====+ 
   
   Forensic Triage Orchestrator v1.0.0  |  Windows Engine
   github.com/YOUR_USERNAME/Gregrep-Overlord
 "@
 Write-Host $Banner -ForegroundColor Cyan
 
-# ─── INIT ─────────────────────────────────────────────────────────────────────
+# --- INIT ---------------------------------------------------------------------
 $StartTime    = Get-Date
 $Hostname     = $env:COMPUTERNAME
 $OSVersion    = (Get-CimInstance Win32_OperatingSystem).Caption
@@ -131,12 +131,12 @@ $RunModules = $RunModules | Where-Object { $_ -notin $SkipList }
 $Global:OverlordResults = [ordered]@{}
 $Global:OverlordFindings = [System.Collections.Generic.List[hashtable]]::new()
 
-# ─── HELPERS ──────────────────────────────────────────────────────────────────
+# --- HELPERS ------------------------------------------------------------------
 function Write-ModuleHeader {
     param([string]$Name, [string]$Description)
     Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] " -NoNewline -ForegroundColor DarkGray
-    Write-Host "► $Name" -ForegroundColor Yellow -NoNewline
-    Write-Host " — $Description" -ForegroundColor Gray
+    Write-Host "> $Name" -ForegroundColor Yellow -NoNewline
+    Write-Host " -- $Description" -ForegroundColor Gray
 }
 
 function Save-ModuleCSV {
@@ -144,7 +144,7 @@ function Save-ModuleCSV {
     if ($Data -and $Data.Count -gt 0) {
         $CsvFile = Join-Path $CSVPath "$ModuleName.csv"
         $Data | Export-Csv -Path $CsvFile -NoTypeInformation -Encoding UTF8 -Force
-        Write-Host "    [CSV] $($Data.Count) records → $CsvFile" -ForegroundColor DarkGreen
+        Write-Host "    [CSV] $($Data.Count) records -> $CsvFile" -ForegroundColor DarkGreen
     }
 }
 
@@ -169,14 +169,14 @@ function Safe-Query {
     }
 }
 
-# ─── MODULES ──────────────────────────────────────────────────────────────────
+# --- MODULES ------------------------------------------------------------------
 
-# MODULE 1: EVENT LOGS — IOC-focused event collection
+# MODULE 1: EVENT LOGS -- IOC-focused event collection
 function Invoke-EventLogs {
     Write-ModuleHeader "EventLogs" "Parsing Security, System, Sysmon, PowerShell, WinRM, Task logs"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
-    # Security log — core auth & process events
+    # Security log -- core auth & process events
     $SecurityEvents = @{
         4624 = "Logon Success"
         4625 = "Logon Failure"
@@ -270,7 +270,7 @@ function Invoke-EventLogs {
             if ($EvtId -in @(4720,4728,4732)) {
                 Add-Finding -Severity "HIGH" -Module "EventLogs" `
                     -Title "Account/Group Modification ($EvtId)" `
-                    -Detail "$($SecurityEvents[$EvtId]) — Target: $($row.TargetUser) by $($row.SubjectUser)" `
+                    -Detail "$($SecurityEvents[$EvtId]) -- Target: $($row.TargetUser) by $($row.SubjectUser)" `
                     -Indicator "AccountModification"
             }
             if ($SuspectUser -and ($row.SubjectUser -like "*$SuspectUser*" -or $row.TargetUser -like "*$SuspectUser*")) {
@@ -328,20 +328,20 @@ function Invoke-EventLogs {
                 # Sysmon IOC flags
                 if ($SysId -eq 8) {
                     Add-Finding -Severity "CRITICAL" -Module "EventLogs-Sysmon" `
-                        -Title "CreateRemoteThread (Sysmon 8) — Possible Code Injection" `
-                        -Detail "Source: $($row.ProcessName) → Target: $($row.TargetImage)" `
+                        -Title "CreateRemoteThread (Sysmon 8) -- Possible Code Injection" `
+                        -Detail "Source: $($row.ProcessName) -> Target: $($row.TargetImage)" `
                         -Indicator "RemoteThreadInjection"
                 }
                 if ($SysId -eq 10 -and $row.TargetImage -match "lsass") {
                     Add-Finding -Severity "CRITICAL" -Module "EventLogs-Sysmon" `
-                        -Title "LSASS Memory Access (Sysmon 10) — Credential Dumping Attempt" `
+                        -Title "LSASS Memory Access (Sysmon 10) -- Credential Dumping Attempt" `
                         -Detail "Source: $($row.ProcessName)" `
                         -Indicator "LSASSDump"
                 }
                 if ($SysId -eq 3 -and $SuspectIP -and $row.DestIP -like "*$SuspectIP*") {
                     Add-Finding -Severity "HIGH" -Module "EventLogs-Sysmon" `
                         -Title "Network Connection to Suspect IP (Sysmon 3)" `
-                        -Detail "$($row.ProcessName) → $($row.DestIP):$($row.DestPort)" `
+                        -Detail "$($row.ProcessName) -> $($row.DestIP):$($row.DestPort)" `
                         -Indicator $SuspectIP
                 }
                 $results.Add($row)
@@ -402,12 +402,12 @@ function Invoke-EventLogs {
 
     $Global:OverlordResults["EventLogs"] = $results
     Save-ModuleCSV -ModuleName "EventLogs" -Data $results
-    Write-Host "    ✓ $($results.Count) event records collected" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) event records collected" -ForegroundColor Green
 }
 
 # MODULE 2: BROWSER ARTIFACTS
 function Invoke-BrowserArtifacts {
-    Write-ModuleHeader "BrowserArtifacts" "Chrome, Edge, Firefox — history, downloads, extensions"
+    Write-ModuleHeader "BrowserArtifacts" "Chrome, Edge, Firefox -- history, downloads, extensions"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
     $UserProfiles = Get-ChildItem "C:\Users" -Directory -ErrorAction SilentlyContinue |
@@ -433,7 +433,7 @@ function Invoke-BrowserArtifacts {
         }
 
         foreach ($Browser in $BrowserPaths.Keys) {
-            # Chrome/Edge History (SQLite — copy first to avoid lock)
+            # Chrome/Edge History (SQLite -- copy first to avoid lock)
             $HistPath = $BrowserPaths[$Browser]["History"]
             if ($HistPath -and (Test-Path $HistPath)) {
                 try {
@@ -462,7 +462,7 @@ function Invoke-BrowserArtifacts {
                             foreach ($pat in $suspURL) {
                                 if ($url -match $pat) {
                                     Add-Finding -Severity "HIGH" -Module "BrowserArtifacts" `
-                                        -Title "Suspicious Browser URL — $Browser ($($Profile.Name))" `
+                                        -Title "Suspicious Browser URL -- $Browser ($($Profile.Name))" `
                                         -Detail $url -Indicator $pat
                                 }
                             }
@@ -529,7 +529,7 @@ function Invoke-BrowserArtifacts {
                             foreach ($p in $suspPerms) {
                                 if ($row.Permissions -match $p) {
                                     Add-Finding -Severity "MEDIUM" -Module "BrowserArtifacts" `
-                                        -Title "Browser Extension with $p Permission — $Browser" `
+                                        -Title "Browser Extension with $p Permission -- $Browser" `
                                         -Detail "$($row.ExtName) ($($ext.Name)) user:$($Profile.Name)" `
                                         -Indicator "ExtPermission:$p"
                                 }
@@ -544,7 +544,7 @@ function Invoke-BrowserArtifacts {
 
     $Global:OverlordResults["BrowserArtifacts"] = $results
     Save-ModuleCSV -ModuleName "BrowserArtifacts" -Data $results
-    Write-Host "    ✓ $($results.Count) browser records collected" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) browser records collected" -ForegroundColor Green
 }
 
 # MODULE 3: SCHEDULED TASKS
@@ -611,7 +611,7 @@ function Invoke-ScheduledTasks {
 
     $Global:OverlordResults["ScheduledTasks"] = $results
     Save-ModuleCSV -ModuleName "ScheduledTasks" -Data $results
-    Write-Host "    ✓ $($results.Count) scheduled task records" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) scheduled task records" -ForegroundColor Green
 }
 
 # MODULE 4: PREFETCH
@@ -661,7 +661,7 @@ function Invoke-Prefetch {
 
     $Global:OverlordResults["Prefetch"] = $results
     Save-ModuleCSV -ModuleName "Prefetch" -Data $results
-    Write-Host "    ✓ $($results.Count) prefetch files parsed" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) prefetch files parsed" -ForegroundColor Green
 }
 
 # MODULE 5: CERTUTIL CACHE / LIVING-OFF-THE-LAND ARTIFACTS
@@ -673,7 +673,7 @@ function Invoke-CertUtil {
         Where-Object { $_.Name -notin @('Public','Default','Default User','All Users') }
 
     foreach ($Profile in $UserProfiles) {
-        # INetCache — certutil often drops here
+        # INetCache -- certutil often drops here
         $INetPaths = @(
             "$($Profile.FullName)\AppData\Local\Microsoft\Windows\INetCache",
             "$($Profile.FullName)\AppData\Local\Microsoft\Windows\Temporary Internet Files"
@@ -736,7 +736,7 @@ function Invoke-CertUtil {
 
     $Global:OverlordResults["CertUtil"] = $results
     Save-ModuleCSV -ModuleName "CertUtil" -Data $results
-    Write-Host "    ✓ $($results.Count) cache/temp artifacts found" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) cache/temp artifacts found" -ForegroundColor Green
 }
 
 # MODULE 6: PERSISTENCE MECHANISMS
@@ -827,7 +827,7 @@ function Invoke-Persistence {
         })
     }
 
-    # COM Hijacking — UserAssist, InprocServer32 anomalies
+    # COM Hijacking -- UserAssist, InprocServer32 anomalies
     $COMPaths = @("HKCU:\Software\Classes\CLSID","HKCU:\Software\Classes\*\shell")
     foreach ($com in $COMPaths) {
         if (Test-Path $com) {
@@ -854,7 +854,7 @@ function Invoke-Persistence {
 
     $Global:OverlordResults["Persistence"] = $results
     Save-ModuleCSV -ModuleName "Persistence" -Data $results
-    Write-Host "    ✓ $($results.Count) persistence artifacts found" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) persistence artifacts found" -ForegroundColor Green
 }
 
 # MODULE 7: NETWORK CONNECTIONS
@@ -885,13 +885,13 @@ function Invoke-NetworkConnections {
             if ($conn.RemotePort -in $suspPorts) {
                 Add-Finding -Severity "HIGH" -Module "NetworkConnections" `
                     -Title "Suspicious Outbound Port: $($conn.RemotePort)" `
-                    -Detail "$($row.ProcessName) (PID $($conn.OwningProcess)) → $($conn.RemoteAddress):$($conn.RemotePort)" `
+                    -Detail "$($row.ProcessName) (PID $($conn.OwningProcess)) -> $($conn.RemoteAddress):$($conn.RemotePort)" `
                     -Indicator "Port:$($conn.RemotePort)"
             }
             if ($SuspectIP -and $conn.RemoteAddress -like "*$SuspectIP*") {
                 Add-Finding -Severity "CRITICAL" -Module "NetworkConnections" `
                     -Title "Active Connection to Suspect IP" `
-                    -Detail "$($row.ProcessName) (PID $($conn.OwningProcess)) → $($conn.RemoteAddress):$($conn.RemotePort)" `
+                    -Detail "$($row.ProcessName) (PID $($conn.OwningProcess)) -> $($conn.RemoteAddress):$($conn.RemotePort)" `
                     -Indicator $SuspectIP
             }
         }
@@ -926,7 +926,7 @@ function Invoke-NetworkConnections {
 
     $Global:OverlordResults["NetworkConnections"] = $results
     Save-ModuleCSV -ModuleName "NetworkConnections" -Data $results
-    Write-Host "    ✓ $($results.Count) network records collected" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) network records collected" -ForegroundColor Green
 }
 
 # MODULE 8: PROCESS TREE
@@ -962,7 +962,7 @@ function Invoke-ProcessTree {
         foreach ($pat in $suspawnPatterns) {
             if ($row.ParentName -match $pat.Parent -and $row.ProcessName -match $pat.Child) {
                 Add-Finding -Severity "CRITICAL" -Module "ProcessTree" `
-                    -Title "Suspicious Process Spawn: $($row.ParentName) → $($row.ProcessName)" `
+                    -Title "Suspicious Process Spawn: $($row.ParentName) -> $($row.ProcessName)" `
                     -Detail "PID: $($proc.ProcessId) | CMD: $($proc.CommandLine)" `
                     -Indicator "SuspiciousSpawn"
             }
@@ -988,7 +988,7 @@ function Invoke-ProcessTree {
 
     $Global:OverlordResults["ProcessTree"] = $results
     Save-ModuleCSV -ModuleName "ProcessTree" -Data $results
-    Write-Host "    ✓ $($results.Count) processes analyzed" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) processes analyzed" -ForegroundColor Green
 }
 
 # MODULE 9: USER ACTIVITY
@@ -1054,12 +1054,12 @@ function Invoke-UserActivity {
 
     $Global:OverlordResults["UserActivity"] = $results
     Save-ModuleCSV -ModuleName "UserActivity" -Data $results
-    Write-Host "    ✓ $($results.Count) user activity records" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) user activity records" -ForegroundColor Green
 }
 
 # MODULE 10: WMI SUBSCRIPTIONS
 function Invoke-WMISubscriptions {
-    Write-ModuleHeader "WMISubscriptions" "WMI event subscriptions — common fileless persistence"
+    Write-ModuleHeader "WMISubscriptions" "WMI event subscriptions -- common fileless persistence"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
     $WMIFilters = Safe-Query -ModuleName "WMI" -Block {
@@ -1109,12 +1109,12 @@ function Invoke-WMISubscriptions {
     }
 
     if ($results.Count -eq 0) {
-        Write-Host "    ✓ No WMI subscriptions found (clean)" -ForegroundColor DarkGray
+        Write-Host "    OK No WMI subscriptions found (clean)" -ForegroundColor DarkGray
     }
 
     $Global:OverlordResults["WMISubscriptions"] = $results
     Save-ModuleCSV -ModuleName "WMISubscriptions" -Data $results
-    Write-Host "    ✓ $($results.Count) WMI subscription records" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) WMI subscription records" -ForegroundColor Green
 }
 
 # MODULE 11: POWERSHELL HISTORY
@@ -1148,7 +1148,7 @@ function Invoke-PowerShellHistory {
                 foreach ($pat in $suspCmds) {
                     if ($line -match $pat) {
                         Add-Finding -Severity "HIGH" -Module "PowerShellHistory" `
-                            -Title "Suspicious PS Command in History — $($Profile.Name)" `
+                            -Title "Suspicious PS Command in History -- $($Profile.Name)" `
                             -Detail $line -Indicator $pat
                     }
                 }
@@ -1159,7 +1159,7 @@ function Invoke-PowerShellHistory {
 
     $Global:OverlordResults["PowerShellHistory"] = $results
     Save-ModuleCSV -ModuleName "PowerShellHistory" -Data $results
-    Write-Host "    ✓ $($results.Count) PowerShell history lines" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) PowerShell history lines" -ForegroundColor Green
 }
 
 # MODULE 12: LATERAL MOVEMENT INDICATORS
@@ -1233,7 +1233,7 @@ function Invoke-LateralMovement {
 
     $Global:OverlordResults["LateralMovement"] = $results
     Save-ModuleCSV -ModuleName "LateralMovement" -Data $results
-    Write-Host "    ✓ $($results.Count) lateral movement indicators" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) lateral movement indicators" -ForegroundColor Green
 }
 
 # MODULE 13: DEFENDER / AV LOGS
@@ -1296,7 +1296,7 @@ function Invoke-DefenderLogs {
 
     $Global:OverlordResults["DefenderLogs"] = $results
     Save-ModuleCSV -ModuleName "DefenderLogs" -Data $results
-    Write-Host "    ✓ $($results.Count) Defender log records" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) Defender log records" -ForegroundColor Green
 }
 
 # MODULE 14: SERVICES & DRIVERS
@@ -1333,12 +1333,12 @@ function Invoke-ServicesDrivers {
 
     $Global:OverlordResults["ServicesDrivers"] = $results
     Save-ModuleCSV -ModuleName "ServicesDrivers" -Data $results
-    Write-Host "    ✓ $($results.Count) services analyzed" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) services analyzed" -ForegroundColor Green
 }
 
 # MODULE 15: AMCACHE
 function Invoke-AmCache {
-    Write-ModuleHeader "AmCache" "AmCache.hve — application execution history"
+    Write-ModuleHeader "AmCache" "AmCache.hve -- application execution history"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
     $AmCachePath = "C:\Windows\AppCompat\Programs\Amcache.hve"
@@ -1347,7 +1347,7 @@ function Invoke-AmCache {
         return
     }
 
-    # Use reg.exe to export — avoids needing EZ Tools
+    # Use reg.exe to export -- avoids needing EZ Tools
     $TempReg = "$env:TEMP\GO_AmCache.reg"
     try {
         $regOutput = & reg.exe export "HKLM\SOFTWARE" $TempReg /y 2>&1
@@ -1390,12 +1390,12 @@ function Invoke-AmCache {
 
     $Global:OverlordResults["AmCache"] = $results
     Save-ModuleCSV -ModuleName "AmCache" -Data $results
-    Write-Host "    ✓ $($results.Count) AmCache entries" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) AmCache entries" -ForegroundColor Green
 }
 
 # MODULE 16: BAM (Background Activity Moderator)
 function Invoke-BAM {
-    Write-ModuleHeader "BAM" "Background Activity Moderator — execution timestamps per user"
+    Write-ModuleHeader "BAM" "Background Activity Moderator -- execution timestamps per user"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
     $BAMBase = "HKLM:\SYSTEM\CurrentControlSet\Services\bam\State\UserSettings"
@@ -1426,7 +1426,7 @@ function Invoke-BAM {
 
     $Global:OverlordResults["BAM"] = $results
     Save-ModuleCSV -ModuleName "BAM" -Data $results
-    Write-Host "    ✓ $($results.Count) BAM execution records" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) BAM execution records" -ForegroundColor Green
 }
 
 # MODULE 17: CREDENTIAL ACCESS ARTIFACTS
@@ -1452,7 +1452,7 @@ function Invoke-CredentialAccess {
             }
         }
 
-        # DPAPI Master Keys — large number can indicate dump attempt
+        # DPAPI Master Keys -- large number can indicate dump attempt
         $DPAPIPath = "$($Profile.FullName)\AppData\Roaming\Microsoft\Protect"
         if (Test-Path $DPAPIPath) {
             $KeyCount = (Get-ChildItem $DPAPIPath -Recurse -ErrorAction SilentlyContinue -File).Count
@@ -1502,7 +1502,7 @@ function Invoke-CredentialAccess {
 
     $Global:OverlordResults["CredentialAccess"] = $results
     Save-ModuleCSV -ModuleName "CredentialAccess" -Data $results
-    Write-Host "    ✓ $($results.Count) credential access artifacts" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) credential access artifacts" -ForegroundColor Green
 }
 
 # MODULE 18: FILE SYSTEM ANOMALIES
@@ -1569,12 +1569,12 @@ function Invoke-FileSystemAnomalies {
 
     $Global:OverlordResults["FileSystemAnomalies"] = $results
     Save-ModuleCSV -ModuleName "FileSystemAnomalies" -Data $results
-    Write-Host "    ✓ $($results.Count) file system anomalies" -ForegroundColor Green
+    Write-Host "    OK $($results.Count) file system anomalies" -ForegroundColor Green
 }
 
 # MODULE 19: SHADOW COPIES
 function Invoke-ShadowCopies {
-    Write-ModuleHeader "ShadowCopies" "VSS snapshots — deletion is a ransomware indicator"
+    Write-ModuleHeader "ShadowCopies" "VSS snapshots -- deletion is a ransomware indicator"
     $results = [System.Collections.Generic.List[PSObject]]::new()
 
     $VSS = Safe-Query -ModuleName "ShadowCopies" -Block {
@@ -1591,13 +1591,13 @@ function Invoke-ShadowCopies {
                 State        = $v.State
             })
         }
-        Write-Host "    ✓ $($VSS.Count) shadow copies found" -ForegroundColor Green
+        Write-Host "    OK $($VSS.Count) shadow copies found" -ForegroundColor Green
     } else {
         Add-Finding -Severity "HIGH" -Module "ShadowCopies" `
             -Title "No VSS Shadow Copies Found" `
-            -Detail "All shadow copies may have been deleted — potential ransomware indicator" `
+            -Detail "All shadow copies may have been deleted -- potential ransomware indicator" `
             -Indicator "VSSDeleted"
-        Write-Host "    ⚠ No shadow copies found — possible deletion" -ForegroundColor Red
+        Write-Host "    ! No shadow copies found -- possible deletion" -ForegroundColor Red
     }
 
     # Check event log for vssadmin delete
@@ -1625,7 +1625,7 @@ function Invoke-ShadowCopies {
     Save-ModuleCSV -ModuleName "ShadowCopies" -Data $results
 }
 
-# ─── HTML REPORT GENERATOR ────────────────────────────────────────────────────
+# --- HTML REPORT GENERATOR ----------------------------------------------------
 function New-HTMLReport {
     param([string]$ReportPath)
 
@@ -1693,7 +1693,7 @@ function New-HTMLReport {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gregrep-Overlord Triage Report — $Hostname</title>
+<title>Gregrep-Overlord Triage Report -- $Hostname</title>
 <style>
   :root {
     --bg: #0d0f14;
@@ -1792,8 +1792,8 @@ function New-HTMLReport {
 <div class="header">
   <div class="header-top">
     <div>
-      <div class="tool-name">🔍 GREGREP-OVERLORD</div>
-      <div class="tool-sub">Forensic Triage Orchestrator v1.0.0 — Windows Engine</div>
+      <div class="tool-name">[SEARCH] GREGREP-OVERLORD</div>
+      <div class="tool-sub">Forensic Triage Orchestrator v1.0.0 -- Windows Engine</div>
     </div>
     <div class="risk-badge">RISK: $RiskLevel</div>
   </div>
@@ -1889,7 +1889,7 @@ function searchFindings(q) {
     $HTML | Out-File -FilePath $ReportPath -Encoding UTF8 -Force
 }
 
-# ─── ORCHESTRATOR ─────────────────────────────────────────────────────────────
+# --- ORCHESTRATOR -------------------------------------------------------------
 Write-Host "`n[CONFIG]" -ForegroundColor Cyan
 Write-Host "  Host        : $Hostname ($OSVersion)"
 Write-Host "  Run As      : $CurrentUser $(if ($IsAdmin) {'[ADMIN]'} else {'[LIMITED]'})"
@@ -1924,12 +1924,12 @@ foreach ($mod in $RunModules) {
     if ($ModuleFunctions.ContainsKey($mod)) {
         & $ModuleFunctions[$mod]
     } else {
-        Write-Warning "Unknown module: $mod — skipping"
+        Write-Warning "Unknown module: $mod -- skipping"
     }
 }
 
 # Generate reports
-Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] ► Generating Reports..." -ForegroundColor Yellow
+Write-Host "`n[$(Get-Date -Format 'HH:mm:ss')] > Generating Reports..." -ForegroundColor Yellow
 $HTMLReportPath = Join-Path $OutputPath "GregrepOverlord-Report_$Hostname_$($StartTime.ToString('yyyyMMdd-HHmmss')).html"
 New-HTMLReport -ReportPath $HTMLReportPath
 
@@ -1946,13 +1946,13 @@ $Global:OverlordFindings | ForEach-Object {
     }
 } | Export-Csv -Path $FindingsCSV -NoTypeInformation -Encoding UTF8
 
-# ─── SUMMARY ──────────────────────────────────────────────────────────────────
+# --- SUMMARY ------------------------------------------------------------------
 $EndTime  = Get-Date
 $Duration = [math]::Round(($EndTime - $StartTime).TotalSeconds, 1)
 
-Write-Host "`n" + "─" * 70 -ForegroundColor DarkGray
+Write-Host ("`n" + "-" * 70) -ForegroundColor DarkGray
 Write-Host "  GREGREP-OVERLORD COMPLETE" -ForegroundColor Cyan
-Write-Host "─" * 70 -ForegroundColor DarkGray
+Write-Host ("-" * 70) -ForegroundColor DarkGray
 Write-Host "  Duration    : ${Duration}s"
 Write-Host "  Findings    : $($Global:OverlordFindings.Count) total"
 Write-Host "  CRITICAL    : $(($Global:OverlordFindings | Where-Object {$_.Severity -eq 'CRITICAL'}).Count)" -ForegroundColor Red
@@ -1960,4 +1960,4 @@ Write-Host "  HIGH        : $(($Global:OverlordFindings | Where-Object {$_.Sever
 Write-Host "  MEDIUM      : $(($Global:OverlordFindings | Where-Object {$_.Severity -eq 'MEDIUM'}).Count)" -ForegroundColor Yellow
 Write-Host "  HTML Report : $HTMLReportPath" -ForegroundColor Green
 Write-Host "  CSV Files   : $CSVPath" -ForegroundColor Green
-Write-Host "─" * 70 -ForegroundColor DarkGray
+Write-Host ("-" * 70) -ForegroundColor DarkGray
