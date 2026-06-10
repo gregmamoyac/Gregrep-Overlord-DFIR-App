@@ -1,7 +1,7 @@
-# Gregrep Overlord DFIR Tool Application
+# Gregrep Overlord DFIR Application
 
 **Forensic Triage Orchestrator** — Windows & macOS  
-*A live-system incident response tool that goes beyond what your SIEM dashboard shows you.*
+*A live-system digital forensic and incident response tool that goes beyond what your SIEM dashboard shows you.*
 
 Gregrep-Overlord is the only tool that combines live-system triage (no file copying, 
 no agent), cross-platform coverage (Windows + macOS natively), IOC-aware reporting 
