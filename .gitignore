@@ -1,0 +1,30 @@
+# Gregrep-Overlord .gitignore
+
+# Output directories (never commit triage output — may contain sensitive data)
+GregrepOverlord-Output/
+output/
+
+# Temp files
+*.tmp
+*.temp
+GO_*.db
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Credentials (never commit)
+config/credentials.txt
+config/*.key
+config/*.pem

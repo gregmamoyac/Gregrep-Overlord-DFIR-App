@@ -1,0 +1,162 @@
+# =============================================================================
+# Gregrep-Overlord — IOC Configuration File
+# =============================================================================
+# Customize these lists to match your environment's threat intel, SIEM alerts,
+# or specific incident context. The orchestrator reads this file at runtime.
+#
+# Format: One entry per line. Lines starting with # are comments.
+# Sections are prefixed with [SECTION_NAME]
+# =============================================================================
+
+# ─── KNOWN BAD IP ADDRESSES ───────────────────────────────────────────────────
+# Add IPs from threat intel feeds, SIEM alerts, or vendor reports
+[SUSPECT_IPS]
+# 192.168.1.100        # example: rogue internal host
+# 45.33.32.156         # example: known C2
+# 198.51.100.0         # example: RFC 5737 test block — replace with real IOCs
+
+# ─── KNOWN BAD DOMAINS ────────────────────────────────────────────────────────
+[SUSPECT_DOMAINS]
+# malicious-c2.example.com
+# data-exfil.ngrok.io
+
+# ─── KNOWN BAD FILE HASHES (SHA256) ───────────────────────────────────────────
+[SUSPECT_HASHES]
+# e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855   # empty file example
+# Add hashes from VirusTotal, CrowdStrike, SentinelOne detections, etc.
+
+# ─── KNOWN BAD PROCESS NAMES ──────────────────────────────────────────────────
+[SUSPECT_PROCESSES]
+mimikatz.exe
+mimi.exe
+procdump64.exe
+SharpHound.exe
+BloodHound.exe
+Rubeus.exe
+Cobalt Strike
+beacon.exe
+psexec.exe
+ProcDump.exe
+wce.exe
+fgdump.exe
+pwdump.exe
+gsecdump.exe
+
+# ─── LIVING-OFF-THE-LAND BINARIES (LOLBins) ───────────────────────────────────
+# These are flagged when used with suspicious arguments, not blocked outright
+[LOLBINS_WINDOWS]
+certutil.exe
+bitsadmin.exe
+mshta.exe
+regsvr32.exe
+wscript.exe
+cscript.exe
+rundll32.exe
+msiexec.exe
+wmic.exe
+odbcconf.exe
+pcalua.exe
+forfiles.exe
+bash.exe
+msbuild.exe
+installutil.exe
+regasm.exe
+regsvcs.exe
+appsyncpublish.exe
+winrm.cmd
+cmstp.exe
+
+[LOLBINS_MACOS]
+osascript
+python3
+perl
+ruby
+curl
+wget
+nc
+ncat
+socat
+ssh
+scp
+rsync
+
+# ─── SUSPICIOUS POWERSHELL PATTERNS ───────────────────────────────────────────
+[PS_SUSPICIOUS_PATTERNS]
+-EncodedCommand
+-WindowStyle Hidden
+-ExecutionPolicy Bypass
+IEX(
+Invoke-Expression
+DownloadString
+DownloadFile
+Net.WebClient
+[Convert]::FromBase64String
+[System.Text.Encoding]
+VirtualAlloc
+CreateThread
+Marshal.GetDelegateForFunctionPointer
+AmsiUtils
+amsiInitFailed
+Add-MpPreference -ExclusionPath
+Set-MpPreference -DisableRealtimeMonitoring
+
+# ─── SUSPICIOUS FILE EXTENSIONS (context-dependent) ──────────────────────────
+[SUSPICIOUS_EXTENSIONS]
+.ps1
+.psm1
+.psd1
+.vbs
+.vbe
+.js
+.jse
+.hta
+.bat
+.cmd
+.scr
+.pif
+.com
+.lnk
+.jar
+.py
+.rb
+.pl
+
+# ─── WHITELISTED PROCESSES (reduce false positives) ──────────────────────────
+# These processes are suppressed from certain high-noise detections
+[WHITELIST_PROCESSES]
+MsMpEng.exe
+svchost.exe
+services.exe
+lsm.exe
+wininit.exe
+csrss.exe
+smss.exe
+winlogon.exe
+explorer.exe
+SearchIndexer.exe
+spoolsv.exe
+taskhostw.exe
+
+# ─── WHITELISTED SCHEDULED TASK PATHS ────────────────────────────────────────
+[WHITELIST_TASK_PATHS]
+\Microsoft\Windows\
+\Microsoft\Office\
+\Adobe\
+
+# ─── ENVIRONMENT-SPECIFIC: YOUR ASSET IPS ────────────────────────────────────
+# Define your trusted internal ranges so network module can focus on external
+[TRUSTED_INTERNAL_RANGES]
+# 10.0.0.0/8
+# 172.16.0.0/12
+# 192.168.0.0/16
+
+# ─── RAPID7 / SENTINELONE CONTEXT ────────────────────────────────────────────
+# Paste alert-specific context here when running against a specific incident.
+# The tool will use these as primary suspects across all modules.
+[ALERT_CONTEXT]
+# ALERT_USER=jsmith
+# ALERT_PROCESS=powershell.exe
+# ALERT_IP=45.33.32.156
+# ALERT_TIMEFRAME_DAYS=3
+# ALERT_HOSTNAME=WORKSTATION-042
+# ALERT_DESCRIPTION=S1 detected PowerShell executing encoded command from Outlook
