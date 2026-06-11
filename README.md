@@ -7,6 +7,7 @@ Gregrep-Overlord is the only tool that combines live-system triage (no file copy
 no agent), cross-platform coverage (Windows + macOS natively), IOC-aware reporting 
 (findings scored by severity), and alert-scenario presets (pre-mapped to EDR alert 
 types) — in a single script with zero dependencies.
+<img width="1539" height="901" alt="GrepOverloard-Dash" src="https://github.com/user-attachments/assets/6d3dfe86-e71d-4ca0-94a2-e2f621104270" />
 
 ---
 
