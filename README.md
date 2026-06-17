@@ -16,7 +16,7 @@ types) — in a single script with zero dependencies.
 Gregrep-Overlord is a standalone forensic triage engine written in **native PowerShell (Windows)** and **Bash (macOS)**. No binary dependencies. No KAPE install. No EZ Tools required. Run it on any live system and get a complete, analyst-ready HTML report plus per-module CSVs — in a single command.
 
 It was built to answer the question every responder faces after an EDR alert:  
-> *"My SentinelOne/Rapid7 alert tells me what was detected — but what else happened on this machine?"*
+> *"My SIEM and EDR alert tells me what was detected — but what else happened on this machine?"*
 
 ---
 
