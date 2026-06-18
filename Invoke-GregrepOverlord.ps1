@@ -88,7 +88,7 @@ $Banner = @"
           +=====+   +===+  +======++=+  +=++======+ +=====+ +=+  +=++=====+ 
   
   Forensic Triage Orchestrator v1.0.0  |  Windows Engine
-  github.com/YOUR_USERNAME/Gregrep-Overlord
+  github.com/gregmamoyac/Gregrep-Overlord-DFIR-App
 "@
 Write-Host $Banner -ForegroundColor Cyan
 
